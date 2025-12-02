@@ -66,7 +66,7 @@ vector_table:
 
 reset_handler_addr:     .word _start
 undefined_handler_addr: .word undefined_handler
-svc_handler_addr:       .word vPortSVCHandler
+svc_handler_addr:       .word FreeRTOS_SWI_Handler
 prefetch_handler_addr:  .word prefetch_handler
 data_handler_addr:      .word data_handler
 unused_handler_addr:    .word hang

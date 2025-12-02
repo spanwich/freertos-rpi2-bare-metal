@@ -13,20 +13,30 @@ Bare-metal FreeRTOS port for Raspberry Pi 2B version 1.2 with BCM2837 SoC (Corte
 
 ```
 freertos_rpi2_bcm2837/
-├── FreeRTOSConfig.h        # FreeRTOS configuration for BCM2837
+├── Source/                  # Application source code
+│   ├── main.c              # Main application
+│   ├── rpi2_support.c      # Hardware support functions
+│   └── FreeRTOSConfig.h    # FreeRTOS configuration for BCM2837
+├── FreeRTOS/               # FreeRTOS kernel (self-contained)
+│   ├── include/            # FreeRTOS headers
+│   ├── portable/           # Port-specific code (ARM_CA9)
+│   └── *.c                 # FreeRTOS core source
 ├── Startup/
 │   ├── startup_rpi2.S      # Boot code and vector table
 │   └── link_rpi2.ld        # Linker script (boots at 0x8000)
 ├── Build/                  # Build output directory
-├── build_rpi2.sh          # Build script
+│   └── kernel7.img         # Bootable image (generated)
+├── build_rpi2.sh           # Build script
+├── .gitignore             # Git ignore rules
 └── README.md              # This file
 ```
 
 ## Dependencies
 
-- FreeRTOS source (reuses from `../freertos_vexpress_a9/Source`)
 - ARM cross-compiler: `arm-none-eabi-gcc`
 - Raspberry Pi firmware files (bootcode.bin, start.elf, fixup.dat)
+
+**Note**: FreeRTOS kernel is self-contained in this repository.
 
 ## Building
 
@@ -78,19 +88,22 @@ This creates `Build/kernel7.img` which can be booted directly on RPi2 hardware.
 
 - ✅ Boot code and vector table
 - ✅ Linker script for 0x8000 boot
-- ✅ FreeRTOS configuration
-- ✅ Build script
-- ⚠️ UART driver (TODO)
-- ⚠️ Interrupt controller driver (TODO)
-- ⚠️ Timer driver (TODO)
+- ✅ FreeRTOS kernel integrated
+- ✅ Build system (self-contained)
+- ✅ ARM generic timer configuration
+- ✅ Minimal libc functions
+- ✅ Compiles successfully (47KB kernel)
+- ⚠️ UART driver (TODO - for console output)
+- ⚠️ Tested on hardware (TODO)
 
 ## Next Steps
 
-To make this functional, you need to implement:
+To add functionality:
 
-1. **UART driver** for console output (PL011 at 0x3F201000)
-2. **Interrupt controller** (BCM2836 ARM control at 0x3F00B200)
-3. **Timer configuration** (ARM generic timer or system timer)
+1. **UART driver** for console output (PL011 at 0x3F201000) - add to `Source/`
+2. **Add your application code** in `Source/main.c`
+3. **Test on real hardware** with SD card boot
+4. **Add additional drivers** as needed (GPIO, SPI, I2C, etc.)
 
 ## Notes
 

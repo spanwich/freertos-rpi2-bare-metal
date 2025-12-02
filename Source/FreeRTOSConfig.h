@@ -19,12 +19,22 @@
  *----------------------------------------------------------*/
 
 /* Hardware configuration */
-#define configCPU_CLOCK_HZ                      ( ( unsigned long ) 900000000 ) /* 900 MHz */
-#define configTICK_RATE_HZ                      ( ( TickType_t ) 1000 )         /* 1ms tick */
-#define configPERIPH_BASE_ADDRESS               0x3F000000
-#define configUART_BASE                         0x3F201000  /* PL011 UART0 */
-#define configGIC_BASE                          0x3F00B200  /* BCM2836 IRQ controller */
-#define configTIMER_BASE                        0x3F003000  /* System timer */
+#define configCPU_CLOCK_HZ                              ( ( unsigned long ) 900000000 ) /* 900 MHz */
+#define configTICK_RATE_HZ                              ( ( TickType_t ) 1000 )         /* 1ms tick */
+#define configPERIPH_BASE_ADDRESS                       0x3F000000
+#define configUART_BASE                                 0x3F201000  /* PL011 UART0 */
+#define configTIMER_BASE                                0x3F003000  /* System timer */
+
+/* BCM2836/2837 ARM local interrupt controller (not standard GIC) */
+#define configINTERRUPT_CONTROLLER_BASE_ADDRESS         0x40000000  /* ARM local peripherals */
+#define configINTERRUPT_CONTROLLER_CPU_INTERFACE_OFFSET 0x0000      /* No offset for BCM2836 */
+
+/* Timer configuration - use ARM generic timer */
+#define configSETUP_TICK_INTERRUPT()                    vConfigureTickInterrupt()
+#define configCLEAR_TICK_INTERRUPT()                    /* Not needed for generic timer */
+
+/* Function prototypes */
+void vConfigureTickInterrupt(void);
 
 /* Scheduler configuration */
 #define configUSE_PREEMPTION                    1
@@ -97,8 +107,8 @@
 #define configMAX_API_CALL_INTERRUPT_PRIORITY   18  /* Higher priority number = lower priority */
 
 /* Assertion configuration */
-extern void vAssertCalled( const char *pcFile, unsigned long ulLine );
-#define configASSERT( x ) if( ( x ) == 0 ) vAssertCalled( __FILE__, __LINE__ )
+extern void vAssertCalled( unsigned long ulLine, const char * const pcFileName );
+#define configASSERT( x ) if( ( x ) == 0 ) vAssertCalled( __LINE__, __FILE__ )
 
 /* Definitions that map the FreeRTOS port interrupt handlers */
 #define vPortSVCHandler     SVC_Handler
