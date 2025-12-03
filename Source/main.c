@@ -1,51 +1,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
+#include "uart.h"
 #include <stddef.h>
 #include <stdint.h>
 
-// PL011 UART registers - matching the original vm_freertos example
-#define UART0_DR (*(volatile unsigned int *)0x9000000)   // Data register
-#define UART0_FR (*(volatile unsigned int *)0x9000018)   // Flag register
-
-void uart_putc(char c) {
-    // Better implementation with delay like original example
-    UART0_DR = c;
-    for (volatile int i = 0; i < 10000; i++) {}  // Simple delay
-}
-
-void uart_puts(const char *s) {
-    while (*s) {
-        uart_putc(*s);
-        s++;
-    }
-}
-
-void uart_decimal(unsigned long val) {
-    if (val == 0) {
-        uart_putc('0');
-        return;
-    }
-    
-    char buffer[12]; // enough for 32-bit number
-    int i = 0;
-    while (val > 0) {
-        buffer[i++] = '0' + (val % 10);
-        val /= 10;
-    }
-    
-    // Print in reverse order
-    while (i > 0) {
-        uart_putc(buffer[--i]);
-    }
-}
-
-void uart_hex(unsigned int val) {
-    int i;
-    for (i = 28; i >= 0; i -= 4) {
-        int digit = (val >> i) & 0xF;
-        uart_putc(digit < 10 ? '0' + digit : 'A' + digit - 10);
-    }
-}
+/* UART functions are now in uart.c */
 
 // Delay function from original example
 void delay(volatile unsigned int count) {
@@ -54,26 +13,16 @@ void delay(volatile unsigned int count) {
     }
 }
 
-// Message printing functions from original example
+// Message printing functions
 void print_freertos_starting(void) {
-    uart_putc('F'); uart_putc('r'); uart_putc('e'); uart_putc('e');
-    uart_putc('R'); uart_putc('T'); uart_putc('O'); uart_putc('S');
-    uart_putc(' '); uart_putc('s'); uart_putc('t'); uart_putc('a');
-    uart_putc('r'); uart_putc('t'); uart_putc('i'); uart_putc('n');
-    uart_putc('g'); uart_putc('.'); uart_putc('.'); uart_putc('.');
-    uart_putc('\n');
+    uart_printf("FreeRTOS starting...\n");
 }
 
 void print_hello_message(void) {
-    uart_putc('H'); uart_putc('e'); uart_putc('l'); uart_putc('l');
-    uart_putc('o'); uart_putc(' '); uart_putc('f'); uart_putc('r');
-    uart_putc('o'); uart_putc('m'); uart_putc(' '); uart_putc('F');
-    uart_putc('r'); uart_putc('e'); uart_putc('e'); uart_putc('R');
-    uart_putc('T'); uart_putc('O'); uart_putc('S'); uart_putc('!');
-    uart_putc('\n');
+    uart_printf("Hello from FreeRTOS!\n");
 }
 
-// Simple printf replacement
+// Printf replacement using our uart_printf
 int printf(const char *format, ...) {
     uart_puts(format);
     return 0;
@@ -254,6 +203,9 @@ void vDemoTask(void *pvParameters) {
 }
 
 int main(void) {
+    // CRITICAL: Initialize UART first before any output!
+    uart_init();
+
     uart_puts("=== MAIN() ENTRY POINT ===\r\n");
     print_freertos_starting();
     

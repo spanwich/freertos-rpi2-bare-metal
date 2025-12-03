@@ -2,10 +2,26 @@
 .global _start
 
 _start:
+    @ Small delay to let UART stabilize after GPU handoff
+    ldr r2, =0x100000
+delay_loop:
+    subs r2, r2, #1
+    bne delay_loop
+
+    @ EARLY DEBUG: Write 'S' to UART immediately to prove we got here
+    ldr r0, =0x3F201000          @ UART0 base
+    mov r1, #0x53                @ ASCII 'S' for Start
+    str r1, [r0]                 @ Write to UART data register
+
     @ Check CPU ID - only CPU0 continues, others park
     mrc p15, 0, r0, c0, c0, 5    @ Read MPIDR
     ands r0, r0, #3              @ Extract CPU ID (bits 0-1)
     bne cpu_park                 @ If not CPU0, park
+
+    @ DEBUG: Write 'C' for CPU0
+    ldr r0, =0x3F201000
+    mov r1, #0x43                @ ASCII 'C'
+    str r1, [r0]
 
     @ Disable interrupts
     cpsid if
@@ -30,6 +46,11 @@ _start:
     cps #0x13                    @ Switch to SVC mode
     ldr sp, =stack_top
 
+    @ DEBUG: Write 'B' before BSS clear
+    ldr r0, =0x3F201000
+    mov r1, #0x42                @ ASCII 'B'
+    str r1, [r0]
+
     @ Initialize BSS section
     ldr r0, =__bss_start__
     ldr r1, =__bss_end__
@@ -38,6 +59,11 @@ bss_clear_loop:
     cmp r0, r1
     strlt r2, [r0], #4
     blt bss_clear_loop
+
+    @ DEBUG: Write 'M' before main
+    ldr r0, =0x3F201000
+    mov r1, #0x4D                @ ASCII 'M'
+    str r1, [r0]
 
     @ Jump to main
     bl main

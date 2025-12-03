@@ -116,11 +116,16 @@ EOF
     arm-none-eabi-gcc $CFLAGS -c -o main.o main_minimal.c
 fi
 
-# Compile FreeRTOS core
+# Compile FreeRTOS core (from FreeRTOS root, not FreeRTOS/Source)
 echo "Compiling FreeRTOS core..."
 for source in tasks.c queue.c list.c timers.c event_groups.c stream_buffer.c; do
-    echo "  Compiling $source..."
-    arm-none-eabi-gcc $CFLAGS -c -o ${source%.c}.o "../$FREERTOS_KERNEL/$source"
+    if [ -f "../$FREERTOS_KERNEL/$source" ]; then
+        echo "  Compiling $source..."
+        arm-none-eabi-gcc $CFLAGS -c -o ${source%.c}.o "../$FREERTOS_KERNEL/$source"
+    else
+        echo "ERROR: FreeRTOS source $source not found at ../$FREERTOS_KERNEL/$source"
+        exit 1
+    fi
 done
 
 # Compile FreeRTOS port

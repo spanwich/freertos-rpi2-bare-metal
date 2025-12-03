@@ -42,14 +42,18 @@ SECTIONS
         __bss_start__ = .;
         *(.bss*)
         *(COMMON)
-        __bss_end__ = .;
+        . = ALIGN(8);
     } > RAM
 
-    /* FreeRTOS heap - 32MB for tasks and buffers */
+    /* End of BSS before heap - THIS is what startup code should clear to */
+    __bss_end__ = .;
+
+    /* FreeRTOS heap - 1MB for tasks and buffers (reduced for faster boot) */
+    /* Separate from BSS so startup doesn't clear it */
     .heap (NOLOAD) : {
         . = ALIGN(8);
         __heap_start__ = .;
-        . = . + 32M;
+        . = . + 1M;
         __heap_end__ = .;
     } > RAM
 
