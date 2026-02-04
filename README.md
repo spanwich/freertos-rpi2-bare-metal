@@ -92,25 +92,43 @@ This creates `Build/kernel7.img` which can be booted directly on RPi2 hardware.
 - ✅ Build system (self-contained)
 - ✅ ARM generic timer configuration
 - ✅ Minimal libc functions
-- ✅ Compiles successfully (47KB kernel)
-- ⚠️ UART driver (TODO - for console output)
-- ⚠️ Tested on hardware (TODO)
+- ✅ Compiles successfully (~36KB kernel)
+- ✅ UART driver (PL011 at 0x3F201000)
+- ✅ **TESTED ON HARDWARE - WORKING!**
+- ✅ HYP mode detection and exit
+- ✅ Secondary CPU parking
+- ✅ FreeRTOS scheduler running
+- ✅ Heap allocation working (32MB heap)
 
-## Next Steps
+## Boot Sequence
 
-To add functionality:
+The BCM2837 GPU firmware boots the ARM CPU in **HYP mode** (Hypervisor mode). The startup code:
 
-1. **UART driver** for console output (PL011 at 0x3F201000) - add to `Source/`
-2. **Add your application code** in `Source/main.c`
-3. **Test on real hardware** with SD card boot
-4. **Add additional drivers** as needed (GPIO, SPI, I2C, etc.)
+1. **Parks secondary CPUs** (CPU1-3) immediately to prevent race conditions
+2. **Detects HYP mode** and uses `eret` to drop to SVC (Supervisor) mode
+3. **Skips FPU initialization** (not needed, causes faults)
+4. **Sets up IRQ and SVC stacks** (8KB IRQ, 16KB main)
+5. **Clears BSS section**
+6. **Calls main()** to start FreeRTOS
+
+Debug output during boot: `XYIVHYEN123456789` indicates successful boot.
+
+## Hardware Testing
+
+Confirmed working on Raspberry Pi 2B v1.2 hardware:
+- Boot from SD card
+- UART output via GPIO14/15 (115200 baud)
+- FreeRTOS task creation and scheduling
+- Memory allocation from 32MB heap
 
 ## Notes
 
 - **kernel7.img**: RPi firmware looks for this filename for ARMv7/ARMv8-32 kernels
-- **CPU parking**: Secondary cores (CPU1-3) are parked in startup code
-- **FPU enabled**: VFPv4 with NEON is initialized in startup
+- **CPU parking**: Secondary cores (CPU1-3) are parked in startup code using WFI
+- **FPU disabled**: Skipped to avoid undefined instruction faults (not needed for current application)
+- **HYP mode**: GPU firmware boots in HYP mode, startup code drops to SVC mode for FreeRTOS
 - **Heap size**: 32MB allocated for FreeRTOS (configurable in FreeRTOSConfig.h)
+- **Boot address**: 0x8000 (loaded by GPU firmware)
 
 ## References
 

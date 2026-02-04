@@ -38,7 +38,7 @@ void uart_init(void) {
     UART0_ICR = 0x7FF;
 
     /* Set baud rate to 115200 */
-    /* UART clock = 48MHz, Baud rate = 115200
+    /* UART clock = 48MHz (Pi 2B default PL011 clock)
      * Divisor = 48000000 / (16 * 115200) = 26.0416...
      * Integer part: 26, Fractional part: 0.0416... * 64 = 2.66 ≈ 3
      */

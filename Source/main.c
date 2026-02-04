@@ -1,10 +1,16 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "uart.h"
+#include "bcm2837_irq.h"
 #include <stddef.h>
 #include <stdint.h>
 
 /* UART functions are now in uart.c */
+
+/* BCM2837 interrupt controller functions */
+extern void bcm2837_irq_init(void);
+extern void bcm2837_enable_vc_irq(uint32_t irq_num);
+extern void bcm2837_disable_vc_irq(uint32_t irq_num);
 
 // Delay function from original example
 void delay(volatile unsigned int count) {
@@ -207,6 +213,15 @@ int main(void) {
     uart_init();
 
     uart_puts("=== MAIN() ENTRY POINT ===\r\n");
+
+    // Initialize BCM2837 interrupt controllers
+    uart_puts("Initializing BCM2837 interrupt controllers...\r\n");
+    bcm2837_irq_init();
+    uart_puts("Interrupt controllers initialized.\r\n");
+
+    // Enable UART interrupt (IRQ 57) if needed for UART RX
+    // bcm2837_enable_vc_irq(IRQ_UART);
+
     print_freertos_starting();
     
     uart_puts("=== ABOUT TO INITIALIZE FREERTOS ===\r\n");

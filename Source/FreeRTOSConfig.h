@@ -25,16 +25,33 @@
 #define configUART_BASE                                 0x3F201000  /* PL011 UART0 */
 #define configTIMER_BASE                                0x3F003000  /* System timer */
 
-/* BCM2836/2837 ARM local interrupt controller (not standard GIC) */
-#define configINTERRUPT_CONTROLLER_BASE_ADDRESS         0x40000000  /* ARM local peripherals */
-#define configINTERRUPT_CONTROLLER_CPU_INTERFACE_OFFSET 0x0000      /* No offset for BCM2836 */
+/* BCM2836/2837 ARM local interrupt controller (not standard GIC)
+ * WARNING: BCM2837 does NOT have ARM GIC. It uses custom QA7 controller.
+ * These values are set to satisfy FreeRTOS ARM_CA9 port requirements,
+ * but interrupt handling must be customized for BCM2837.
+ */
+#define configINTERRUPT_CONTROLLER_BASE_ADDRESS         0x40000000  /* ARM local peripherals (QA7) */
+#define configINTERRUPT_CONTROLLER_CPU_INTERFACE_OFFSET 0x0000      /* Direct access, no offset */
+
+/* BCM2837 VideoCore interrupt controller for peripherals (GPIO, UART, Timer) */
+#define configVC_IRQ_BASE_ADDRESS                       0x3F00B000  /* VideoCore IRQ controller */
 
 /* Timer configuration - use ARM generic timer */
 #define configSETUP_TICK_INTERRUPT()                    vConfigureTickInterrupt()
-#define configCLEAR_TICK_INTERRUPT()                    /* Not needed for generic timer */
+#define configCLEAR_TICK_INTERRUPT()                    vClearTickInterrupt()
+
+/* BCM2837 GIC stub support - extern declarations */
+extern volatile uint32_t bcm2837_stub_gic_pmr;
+extern volatile uint32_t bcm2837_stub_gic_bpr;
+extern volatile uint8_t bcm2837_stub_gic_priority[1024];
+
+/* Redefine interrupt controller base to point to stub registers */
+#undef configINTERRUPT_CONTROLLER_BASE_ADDRESS
+#define configINTERRUPT_CONTROLLER_BASE_ADDRESS         ((uint32_t)&bcm2837_stub_gic_priority[0])
 
 /* Function prototypes */
 void vConfigureTickInterrupt(void);
+void vClearTickInterrupt(void);
 
 /* Scheduler configuration */
 #define configUSE_PREEMPTION                    1
@@ -108,6 +125,7 @@ void vConfigureTickInterrupt(void);
 
 /* Assertion configuration */
 extern void vAssertCalled( unsigned long ulLine, const char * const pcFileName );
+/* BCM2837-specific: Assertions enabled with GIC stub support */
 #define configASSERT( x ) if( ( x ) == 0 ) vAssertCalled( __LINE__, __FILE__ )
 
 /* Definitions that map the FreeRTOS port interrupt handlers */
